@@ -2,10 +2,11 @@ import json from 'rollup-plugin-json'
 import resolve from 'rollup-plugin-node-resolve'
 import commonjs from 'rollup-plugin-commonjs'
 import svelte from 'rollup-plugin-svelte'
-import sizes from "rollup-plugin-sizes"
+import sizes from 'rollup-plugin-sizes'
 
 export default {
   input: 'src/main.js',
+  external: ['openlayers'],
   output: {
     file: 'dist/openlayers-routing-machine.js',
     format: 'umd',
