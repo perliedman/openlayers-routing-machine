@@ -1,147 +1,107 @@
 <div></div>
 
 <script>
-  import ol from 'openlayers'
+import ol from 'openlayers'
+import {getLastWaypointIndexBefore} from 'routing-components/utils'
 
-  export default {
-    oncreate () {
-      this.observe('route', route => {
-        const map = this.get('map')
-        const coords = route.coordinates.map(c => ol.proj.fromLonLat(c))
+export default {
+  oncreate () {
+    this.observe('route', route => {
+      const map = this.get('map')
+      const coords = route.coordinates.map(c => ol.proj.fromLonLat(c))
 
-        if (!this.layer) {
-          this.line = new ol.Feature({
-            type: 'route',
-            geometry: new ol.geom.LineString(coords),
-            style: this.get('style')
+      if (!this.layer) {
+        this.line = new ol.Feature({
+          type: 'route',
+          geometry: new ol.geom.LineString(coords),
+          style: this.get('style')
+        })
+
+        this.layer = new ol.layer.Vector({
+          updateWhileInteracting: true,
+          source: new ol.source.Vector({
+            features: [this.line]
+          })
+        })
+
+        map.on('click', this.onClick, this)
+        map.on('pointerdown', this.onPointerDown, this)
+
+        map.addLayer(this.layer)
+      } else {
+        this.line.getGeometry().setCoordinates(coords)
+      }
+    })
+    this.observe('selected', selected => {
+      if (this.line) {
+        this.line.setStyle(this.get('style'))
+      }
+    })
+  },
+
+  ondestroy () {
+    if (this.line) {
+      const map = this.get('map')
+      map.removeLayer(this.layer)
+      map.un('click', this.onClick, this)
+      map.un('pointerdown', this.onPointerDown, this)
+    }
+  },
+
+  computed: {
+    style: selected => new ol.style.Style({
+      stroke: new ol.style.Stroke({
+        width: selected ? 9 : 6,
+        color: [51, 136, 255, selected ? 1 : 0.5]
+      })
+    })
+  },
+
+  methods: {
+    onClick (e) {
+      const map = this.get('map')
+      map.forEachFeatureAtPixel(e.pixel, (feature, layer) => {
+        if (layer === this.layer) {
+          this.fire('selected')
+        }
+      })
+    },
+    onPointerDown (e) {
+      const map = this.get('map')
+      map.forEachFeatureAtPixel(e.pixel, (feature, layer) => {
+        if (layer === this.layer) {
+          const map = this.get('map')
+          map
+            .once('pointerdrag', this.onDrag, this)
+          map.once('pointerup', () =>
+            map.un('pointerdrag', this.onDrag, this))
+        }
+      })
+    },
+    onDrag (e) {
+      const map = this.get('map')
+      if (!this.get('selected')) {
+        return
+      }
+
+      map.forEachFeatureAtPixel(e.pixel, (feature, layer) => {
+        if (layer === this.layer) {
+          const map = this.get('map')
+          const route = this.get('route')
+
+          map.un('pointerdrag', this.onDrag, this)
+
+          const lngLat = ol.proj.toLonLat(e.coordinate)
+
+          this.fire('dragging', {
+            afterWpIndex: getLastWaypointIndexBefore(route, lngLat),
+            lngLat
           })
 
-          this.layer = new ol.layer.Vector({
-            updateWhileInteracting: true,
-            source: new ol.source.Vector({
-              features: [this.line]
-            })
-          });
-
-          map.on('click', this.onClick, this)
-          map.on('pointerdrag', this.onDrag, this)
-
-          map.addLayer(this.layer)
-        } else {
-          this.line.getGeometry().setCoordinates(coords)
+          e.preventDefault()
         }
       })
-      this.observe('selected', selected => {
-        if (this.line) {
-          this.line.setStyle(this.get('style'))
-        }
-      })
-    },
-
-    ondestroy () {
-      if (this.line) {
-        const map = this.get('map')
-        map.removeLayer(this.layer)
-        map.un('click', this.onClick, this)
-        map.un('pointerdrag', this.onDrag, this)
-      }
-    },
-
-    computed: {
-      style: selected => new ol.style.Style({
-        stroke: new ol.style.Stroke({
-          width: selected ? 9 : 6,
-          color: [51, 136, 255, selected ? 1 : 0.5]
-        })
-      })
-    },
-
-    methods: {
-      onClick (e) {
-        map.forEachFeatureAtPixel(e.pixel, (feature, layer) => {
-          if (layer === this.layer) {
-            this.fire('selected')
-          }
-        })
-      },
-      onPointerDown (e) {
-        map.forEachFeatureAtPixel(e.pixel, (feature, layer) => {
-          if (layer === this.layer) {
-            const map = this.get('map')
-            map
-              .once('pointerdrag', this.onDrag, this)
-              .once('pointerup', () => {
-                map.un('pointerdrag', this.onDrag, this)
-              })
-          }
-        })
-      },
-      onDrag (e) {
-        if (!this.get('selected')) {
-          return;
-        }
-
-        map.forEachFeatureAtPixel(e.pixel, (feature, layer) => {
-          if (layer === this.layer) {
-            const map = this.get('map')
-
-            map.un('pointerdrag', this.onDrag, this)
-
-            map.once('pointerup', () =>
-              map.on('pointerdrag', this.onDrag, this))
-
-            this.fire('dragging', {
-              afterWpIndex: 0,
-              lngLat: ol.proj.toLonLat(e.coordinate)
-            })
-
-            e.preventDefault()
-          }
-        })
-      }
-      // startDrag (e) {
-      //   const map = this.get('map')
-      //   const cleanup = () => {
-      //     map
-      //       .off('mouseup', cleanup)
-      //       .off('mousemove', dragging)
-      //   }
-      //   const dragging = () => {
-      //     cleanup()
-
-      //     const route = this.get('route')
-      //     const bestMatch = route.coordinates.reduce((a, c, i) => {
-      //       if (i === route.waypointIndices[a.nextWpIndex]) {
-      //         a.nextWpIndex++
-      //       }
-
-      //       // Euclidean math in lat/lng space because what could possibly go wrong?
-      //       const d = Math.hypot(c[0] - e.latlng.lng, c[1] - e.latlng.lat)
-      //       if (d < a.minDist) {
-      //         a.wpIndex = a.nextWpIndex - 1
-      //         a.index = i
-      //         a.minDist = d
-      //       }
-
-      //       return a
-      //     }, {nextWpIndex: 0, wpIndex: -1, minDist: 1e9})
-
-      //     if (bestMatch.wpIndex >= 0) {
-      //       this.fire('dragging', {
-      //         afterWpIndex: bestMatch.wpIndex,
-      //         lngLat: route.coordinates[bestMatch.index]
-      //       })
-      //     } else {
-      //       console.warn('Did not find a matching line point / waypoint')
-      //     }
-
-      //     L.DomEvent.stop(e)
-      //   }
-
-      //   map
-      //     .once('mouseup', cleanup)
-      //     .on('mousemove', dragging)
-      // },
     }
   }
+}
 </script>

@@ -1,68 +1,82 @@
 <div></div>
 
 <script>
-  import ol from 'openlayers'
+import ol from 'openlayers'
 
-  var defaultStyle = new ol.style.Style({
-    image: new ol.style.Icon({
-      anchor: [0.5, 46],
-      anchorXUnits: 'fraction',
-      anchorYUnits: 'pixels',
-      src: 'https://openlayers.org/en/v4.6.4/examples/data/icon.png'
+var defaultStyle = new ol.style.Style({
+  image: new ol.style.Icon({
+    anchor: [0.5, 46],
+    anchorXUnits: 'fraction',
+    anchorYUnits: 'pixels',
+    src: 'https://openlayers.org/en/v4.6.4/examples/data/icon.png'
+  })
+})
+
+export default {
+  oncreate () {
+    const lngLat = this.get('lngLat')
+    const map = this.get('map')
+
+    const feature = this.feature = new ol.Feature({
+      type: 'waypointMarker',
+      geometry: new ol.geom.Point(ol.proj.fromLonLat(lngLat))
     })
-  });
 
-  export default {
-    oncreate () {
-      const lngLat = this.get('lngLat')
-      const map = this.get('map')
+    feature.setStyle(defaultStyle)
 
-      const feature = this.feature = new ol.Feature({
-        type: 'waypointMarker',
-        geometry: new ol.geom.Point(ol.proj.fromLonLat(lngLat))
+    this.layer = new ol.layer.Vector({
+      updateWhileInteracting: true,
+      source: new ol.source.Vector({
+        features: [feature]
       })
+    })
 
-      feature.setStyle(defaultStyle);
+    map.addLayer(this.layer)
+    map.on('pointerdown', this.onDown, this)
 
-      this.layer = new ol.layer.Vector({
-        updateWhileInteracting: true,
-        source: new ol.source.Vector({
-          features: [feature]
-        })
-      });
+    this
+      .observe('lngLat', lngLat => this.setCoordinate(ol.proj.fromLonLat(lngLat)))
+    this
+      .observe('dragging', dragging => {
+        const onOff = dragging ? 'on' : 'un'
+        const map = this.get('map')
+        map[onOff]('pointerdrag', this.drag, this)
+        map[onOff]('pointerup', this.dragEnd, this)
+      })
+  },
 
-      map.addLayer(this.layer)
+  ondestroy () {
+    const map = this.get('map')
+    map.removeLayer(this.layer)
+    map.un('pointerdrag', this.drag, this)
+    map.on('pointerdown', this.onDown, this)
+    map.un('pointerup', this.dragEnd, this)
+  },
 
-      this
-        .observe('lngLat', lngLat => this.setCoordinate(ol.proj.fromLonLat(lngLat)))
-      this
-        .observe('dragging', dragging => {
-          const onOff = dragging ? 'on' : 'un'
-          const map = this.get('map')
-          map[onOff]('pointerdrag', this.drag, this)
-          map[onOff]('pointerup', this.dragEnd, this)
-        })
+  methods: {
+    drag (e) {
+      this.setCoordinate(e.coordinate)
+      this.fire('drag', {lngLat: ol.proj.toLonLat(e.coordinate)})
+      e.preventDefault()
     },
-
-    ondestroy () {
-      this.get('map').removeLayer(this.layer)
+    dragEnd (e) {
+      const map = this.get('map')
       map.un('pointerdrag', this.drag, this)
-      map.un('pointerup', this.dragEnd, this)
+      this.fire('dragend', {lngLat: ol.proj.toLonLat(e.coordinate)})
+      e.preventDefault()
     },
-
-    methods: {
-      drag (e) {
-        this.setCoordinate(e.coordinate)
-        this.fire('drag', {lngLat: ol.proj.toLonLat(e.coordinate)})
-        e.preventDefault()
-      },
-      dragEnd (e) {
-        this.fire('dragend', {lngLat: ol.proj.toLonLat(e.coordinate)})
-        e.preventDefault()
-      },
-      setCoordinate (coordinate) {
-        this.feature.getGeometry().setCoordinates(coordinate)
-      }
+    onDown (e) {
+      const map = this.get('map')
+      map.forEachFeatureAtPixel(e.pixel, (feature, layer) => {
+        if (layer === this.layer) {
+          map.on('pointerdrag', this.drag, this)
+          map.once('pointerup', this.dragEnd, this)
+        }
+      })
+    },
+    setCoordinate (coordinate) {
+      this.feature.getGeometry().setCoordinates(coordinate)
     }
   }
+}
 </script>
