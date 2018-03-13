@@ -2,13 +2,14 @@
 
 <script>
 import ol from 'openlayers'
+import markerImage from '../../assets/glyph-marker-icon.png'
 
 var defaultStyle = new ol.style.Style({
   image: new ol.style.Icon({
-    anchor: [0.5, 46],
-    anchorXUnits: 'fraction',
+    anchor: [12, 41],
+    anchorXUnits: 'pixels',
     anchorYUnits: 'pixels',
-    src: 'https://openlayers.org/en/v4.6.4/examples/data/icon.png'
+    src: markerImage
   })
 })
 
@@ -30,6 +31,8 @@ export default {
         features: [feature]
       })
     })
+
+    this.layer.setZIndex(10)
 
     map.addLayer(this.layer)
     map.on('pointerdown', this.onDown, this)

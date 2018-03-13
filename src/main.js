@@ -1,6 +1,5 @@
-import Control from 'routing-components/Control.html'
-import Waypoint from 'routing-components/waypoint'
-import OSRMv1 from 'routing-components/osrm-v1'
+import {Waypoint, OSRMv1} from 'routing-components'
+import ControlWrapper from './components/ControlWrapper.html'
 import Marker from './components/Marker.html'
 import RouteLine from './components/RouteLine.html'
 
@@ -27,7 +26,7 @@ function OlrmControl (options) {
   // Workaround for standard complaining about unused variable
   // or new with side-effect
   ;(function () {
-    return new Control({
+    return new ControlWrapper({
       target: container,
       data: Object.assign({}, options)
     })
