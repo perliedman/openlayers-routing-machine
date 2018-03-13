@@ -26,9 +26,12 @@
     "eslint-config-standard": "^11.0.0",
     "eslint-plugin-import": "^2.9.0",
     "eslint-plugin-node": "^6.0.1",
-    "eslint-plugin-promise": "^3.7.0",
+    "eslint-plugin-promise": "^3.7.0"
   },
   "dependencies": {
     "routing-components": "^1.0.0"
+  },
+  "peerDependencies": {
+    "openlayers": "^4.6.4"
   }
 }
