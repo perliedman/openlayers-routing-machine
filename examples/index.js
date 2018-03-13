@@ -9,7 +9,7 @@ var map = new ol.Map({
     center: ol.proj.fromLonLat([11.94, 57.7]),
     zoom: 12
   })
-});
+}); 
 
 var waypoints = [
   [11.94, 57.74],

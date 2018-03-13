@@ -24,10 +24,14 @@ function OlrmControl (options) {
   options.router = options.router || new OSRMv1(options)
 
   const container = document.createElement('div')
-  const component = new Control({
-    target: container,
-    data: Object.assign({map}, options)
-  })
+  // Workaround for standard complaining about unused variable
+  // or new with side-effect
+  ;(function () {
+    return new Control({
+      target: container,
+      data: Object.assign({}, options)
+    })
+  })()
 
   ol.control.Control.call(this, {
     element: container,
@@ -40,4 +44,3 @@ ol.inherits(OlrmControl, ol.control.Control)
 export default {
   Control: OlrmControl
 }
-
