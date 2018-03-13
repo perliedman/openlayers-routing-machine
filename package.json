@@ -1,14 +1,14 @@
 {
   "name": "openlayers-routing-machine",
   "version": "1.0.0",
-  "description": "",
+  "description": "A complete user interface for routing within an OpenLayers map",
   "main": "index.js",
   "scripts": {
     "dev": "mkdirp dist && rollup -c -w",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
-  "author": "",
+  "author": "Per Liedman <per@liedman.net>",
   "license": "ISC",
   "devDependencies": {
     "eslint": "^4.18.1",
@@ -28,6 +28,7 @@
     "eslint-config-standard": "^11.0.0",
     "eslint-plugin-import": "^2.9.0",
     "eslint-plugin-node": "^6.0.1",
-    "eslint-plugin-promise": "^3.7.0"
+    "eslint-plugin-promise": "^3.7.0",
+    "routing-components": "^1.0.0"
   }
 }
